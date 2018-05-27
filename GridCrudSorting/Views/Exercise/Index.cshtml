@@ -1,0 +1,93 @@
+﻿
+@{
+    ViewBag.Title = "Exercise List";
+}
+
+<h2>My Exercise Recorder</h2><br />
+
+<a class="btn btn-success" style="margin-bottom: 20px" onclick="PopupForm('@Url.Action("Add", "Exercise")')"><i class="fa fa-plus"></i>Add New Entry</a>
+
+<table id="exerciseRecordTable" class="table table-striped table-bordered" style="width:100%">
+    <thead>
+        <tr>
+            <th>Exercise Name</th>
+            <th>Exercise Date</th>
+            <th>Duration In Minutes</th>
+            <th></th>
+        </tr>
+    </thead>
+</table>
+
+@section scripts{   
+    <script>
+
+    var dataTable;
+
+        $(document).ready(function () {
+            dataTable = $("#exerciseRecordTable").DataTable({
+                "ajax": {
+                    "url": "/Exercise/GetData",
+                    "type": "Get",
+                    "datatype": "json"
+                },
+                "columns": [
+                    { "data": "ExerciseName" },
+                    {
+                      "data": "ExerciseDate","render": function (jsondate) {                                          
+                            jsondate = jsondate.replace("/Date(", "").replace(")/", "");
+                            if (jsondate.indexOf("+") > 0) {
+                                jsondate = jsondate.substring(0, jsondate.indexOf("+"));
+                            }
+                            else if (jsondate.indexOf("-") > 0) {
+                                jsondate = jsondate.substring(0, jsondate.indexOf("-"));
+                            }
+
+                            var date = new Date(parseInt(jsondate, 10));
+                            var month = date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1;
+                            var currentDate = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+
+                            return currentDate + "/" + month + "/" + date.getFullYear();                                                        
+                      }                     
+                    },
+                    { "data": "DurationInMinutes" },
+                    {
+                      "data": "Id", "render": function (data) {
+                          return "<a class='btn btn-success btn-sm' onclick = PopupForm('@Url.Action("Edit","Exercise")/" + data +"')><i class='fa fa-pencil'></i> Edit </a>" +
+                                 "<a class='btn btn-danger btn-sm' style='margin-left: 22px' onclick = Delete("+data+")><i class='fa fa-trash'></i> Delete </a>";
+                      },
+
+                      "orderable": false,
+                      "searchable": false,
+                      "width": "150px"
+                    },
+                ],
+
+                "language": {
+
+                    "emptyTable": "No data found. Please click on <b>Add New</b> Entry."
+                }
+            });
+        });
+
+        function Delete(id) {
+
+           if (confirm('Are you sure to delete this record?')) {
+
+               $.ajax({
+                    type: "POST",
+                   url: '@Url.Action("Delete","Exercise")/' + id,
+                    success: function (data) {
+                       if (data.success) {
+
+                          dataTable.ajax.reload();
+                           $.notify(data.message, {
+                                globalPosition: "top center",
+                               className: "Selected record successfully removed"
+                            });
+                        }
+                    }
+                });
+            }
+        } 
+    </script>
+}
